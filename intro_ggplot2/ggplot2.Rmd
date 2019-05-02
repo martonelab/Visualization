@@ -1,0 +1,145 @@
+---
+title: "ggplot2"
+author: "Jasmine"
+date: '2019-04-29'
+output: html_document
+---
+
+lesson modified from Data Carpentry [R-ecology-lesson](http://datacarpentry.org/R-ecology-lesson/04-visualization-ggplot2.html) 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# install.packages(c(ghibili, wesanderson, plotly, viridis))
+```
+
+Here is an easy visualization on how ggplot layers on and how the different commands using this [flipbook](https://evamaerey.github.io/ggplot_flipbook/ggplot_flipbook_xaringan.html#21)
+
+# Download data
+```{r}
+library(tidyverse)
+
+# Download the data
+download.file(url="https://ndownloader.figshare.com/files/2292169",
+              destfile = "portal_data_joined.csv")
+
+surveys_complete <- read_csv("data/portal_data_joined.csv")
+
+#view the first few rows
+head(surveys_complete)
+```
+
+# make a new plot
+a basic ggplot call is made up of:
+1. `ggplot()`
+2. `geom_[some kind of plot]()`
+3. .. and more calls to make your plots more fancy or more complicated facets
+
+where:
+1. `ggplot()` --> holds your data that will be applied to all subsequent layers
+2. `geom_[some kind of plot]()` --> determines the type of graph you have ie `geom_line` = line graph
+3. and these calls are chained together by +
+
+```{r}
+test_plot <- ggplot(data = surveys_complete, mapping = aes(x = weight, y = hindfoot_length)) + 
+  geom_hex()
+```
+_pro tip_: don't forget that the + needs to be at the end of each line
+
+# Plotly
+a way to look at data more easily in an interactive plot
+- `ggplot` plot can be directly converted to a `plotly` plot
+```{r}
+library(plotly)
+
+ggplotly()
+ggplotly(test_plot)
+
+last_plot()
+
+ggplot(data = surveys_complete, mapping = aes(x = weight, y = hindfoot_length)) + 
+  geom_point()
+```
+
+
+# a basic plot with coloured by species
+- place arguments like `x`, `y` and `colour` in `aes()`
+- arguments like `alpha` and `size` are applied to the general points so are outside `aes()`
+- use `labs()` to make your axis and title look nice
+```{r}
+ggplot(data = surveys_complete, mapping = aes(x = weight, y = hindfoot_length, colour = species)) + 
+  geom_point(alpha = 0.5, size = 10) +
+  geom_smooth(method = "lm", aes(group = 1)) +
+  labs(title = "new title here \nhello",
+       y = expression(paste("hindfoot length (cm^2)", mu, ")")),
+       x = "weight (g)",
+       colour = "rats") 
+```
+
+# Make you plots pretty with colours ~
+
+## Ghibli
+
+### View the palette
+```{r}
+library(ghibli)
+
+ghibli_palettes
+
+# display palettes w/ names
+par(mfrow=c(9,3))
+for(i in names(ghibli_palettes)) print(ghibli_palette(i))
+
+pal <- ghibli_palette("KikiLight")
+
+pal2 <- c(pal[3], pal[4])
+```
+
+### use the palette 
+- ghibli has it's own function `scale_fill_ghibli_c` (continuous) or `_d` (discrete) 
+- just add the name of the palette as an argument
+```{r}
+ggplot(data = surveys_complete, mapping = aes(x = weight, y = hindfoot_length)) +
+  geom_hex() +
+  scale_fill_ghibli_c("PonyoLight")
+```
+
+
+## wesanderson
+https://github.com/karthik/wesanderson
+- this palette doesn't have it's own function yet 
+```{r}
+library(wesanderson)
+
+# look at your palettes
+wes_palettes
+
+# assign the palette you want to use to something
+pal <- wes_palette("Zissou1", 100, type = "continuous")
+
+ggplot(data = surveys_complete, mapping = aes(x = weight, y = hindfoot_length)) +
+  geom_hex() +
+  scale_fill_gradientn(colours = pal)
+```
+
+## Viridis
+https://cran.r-project.org/web/packages/viridis/vignettes/intro-to-viridis.html
+- a nice package with colours that are colourblind friendly
+- this is similar to how ghibli works but doesn't have a _c or _d function but instead uses either `discrete = TRUE` or `FALSE`
+```{r}
+yearly_counts <- surveys_complete %>%
+                 count(year, species_id)
+
+library(viridis)
+
+ggplot(data = yearly_counts, mapping = aes(x = year, y = n, color = species_id)) +
+    geom_line() 
+
+ggplot(data = yearly_counts, mapping = aes(x = year, y = n, color = species_id)) +
+    geom_line() +
+  # add this line to use the viridis colour package
+  # TRUE for discrete variable and FALSE for continuous variables
+   scale_color_viridis(discrete = TRUE)
+
+```
+
